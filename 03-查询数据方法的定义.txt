@@ -1,0 +1,3 @@
+package com.demo.mapper.UserInfoMapper
+
+import entity com.demo.data.entity.UserInfo
