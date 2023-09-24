@@ -1,2 +1,4 @@
-# new-ds
-颠覆传统动态sql
+# new-ds (new dynamic sql)
+颠覆传统动态sql书写方式
+
+
