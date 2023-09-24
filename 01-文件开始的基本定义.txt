@@ -1,0 +1,13 @@
+// 当前类所在的包路径, 路径中最后一个为当前所生成的类名
+package com.demo.mapper.UserInfoMapper
+
+// 导入类 并标志为当前类为实体类
+// 导入的实体类只能存在一个
+import entity com.demo.data.entity.UserInfo
+
+// 导入其他相关类
+import java.util.List
+
+
+>>> 02-添加数据方法的定义
+
