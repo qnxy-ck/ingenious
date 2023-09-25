@@ -1,3 +1,124 @@
-package com.demo.mapper.UserInfoMapper
+namespace com.demo.mapper.UserInfoMapper
 
 import entity com.demo.data.entity.UserInfo
+
+import java.util.List
+
+
+// 根据id查询一条数据
+// search 为查询方法定义关键字
+// UserInfo 为查询返回结果类型, 如果查询结果类型为当前实体类类型一致, 可以省略否则则需要显示书写并且需要导入对应的类
+// selectById 为生成对于方法名称
+// id: Long 为查询参数
+search UserInfo selectById(id: Long) {
+    
+    select * from user_info where id = :id
+    
+}
+
+// mul (multiple) 查询结果为多个
+// UserInfo 为查询返回结果类型, 如果查询结果类型为当前实体类类型一致, 可以省略否则则需要显示书写并且需要导入对应的类
+search mul UserInfo selectByNameAndEmail(username: String, email: String) {
+
+    select * from user_info
+        where
+            // 如果条件成立 则下面一行将会拼接, 如果不成立则不会拼接
+            // 在调用函数时 如果该函数没有任何参数, 则括号可以省略
+            username = :username::notNull   // 控制当前行, 条件满足之后才会拼接改行sql
+            and email = :email::hasContains("@")
+            
+            // 以上代码会生成java代码, 可以理解为jdbc动态拼接sql
+            // 每个参数调用的函数为java实现
+            // 可以理解为 Tools.hasContains(email, "@")
+            // 用户也可以实现某些接口的情况下, 自定义自己的函数
+        
+}
+
+// search mul selectByName(username: String?) {
+//    
+//     select * from user_info
+//         where
+//             username = :username    // 如果仅对参数判空(null), 则只需要在声明的时候加上 ? 即可
+//
+// }
+
+
+// 根据id查询多个 
+search mul selectByIds(idList: List<Long>) {
+    
+    select * from user_info
+        // 等价为 id in (?, ?, ?)
+        // 实现方式使用 #in 关键字处理, 而不是使用函数来处理
+        // 关键字为编译期, 函数为执行期, 按理说编译处理的效率会高一些
+        // 如果需要特殊处理则需要自定义函数进行调用
+        where id #in :idList
+
+}
+
+// 模糊查询
+search mul selectByNameKeyword(nameKeyword: String) {
+    
+    select * from user_info
+        // 模糊查询
+        // #like_l  等于 name like '%?' 
+        // #like_r  等于 name like '?%'
+        where name #like :nameKeyword
+    
+}
+
+// -> 箭头语法
+search mul selectByEmail(email: String) {
+    
+    select * from user_info
+        // 对一个变量调用多个函数
+        // 语法格式: :xxx -> boolean expression
+        // 如: :email -> 1 == 1 && "s" == "l" || :status = 1
+        where email = :email -> notNull && hasContains("@")
+        
+        // :email -> notNull && hasContains("@") 
+        // 是对 email 参数进行调用两个函数, 也可以在箭头后面对其他参数调用函数
+        // 如: :email -> :status::notNull
+    
+}
+
+
+// 控制多行条件, 复杂表达式
+// #if 关键字
+search mul selectByStatus(status: Int) {
+    
+    select * from user_info
+        #if status == 1 {
+            where
+                username = 'test'
+                and age = 22
+        }
+   
+}
+
+
+// #when 关键字
+search mul selectAllSortBy(sortType: Int) {
+
+    select * from user_info
+        order by
+        #when :sortType {
+            // 根据年龄倒序
+            0 -> age desc
+            
+            // 根据年龄升序
+            1 -> age
+            
+            // 根据创建记录时间倒叙
+            2 -> created_at desc
+            
+            // 默认
+            else -> created_at
+            
+        }
+    
+}
+
+
+
+
+
