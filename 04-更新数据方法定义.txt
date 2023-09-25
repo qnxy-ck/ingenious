@@ -1,0 +1,36 @@
+namespace com.demo.mapper.UserInfoMapper
+
+import entity com.demo.data.entity.UserInfo
+
+
+// 更新一条记录
+// update 更新方法定义关键字
+// updateUserInfo 更新方法名称
+// userInfo: UserInfo 参数信息
+// 默认返回更新影响行数
+// 如果需要返回布尔值, 则需手动指定
+// 如: update boolean updateUserInfo(userInfo: UserInfo) { }
+update updateUserInfo(userInfo: UserInfo) {
+
+    // 原始方式
+    update user_info
+        set
+            username = :userInfo.username,
+            age = :userInfo.age,
+            email = :userInfo.email,
+            birthday = :userInfo.birthday
+        where id = :userInfo.id
+
+
+    // 进阶方式
+    // 如果更新的表为当前实体对应表 表名可以省略
+    #update_set user_info :userInfo {
+        // 对指定字段进行更新, 如果更新字段名称和当前对象属性名称一样可以省略等号前的内容
+        username = :username
+        :age
+        :email
+        :birthday::notNull  // 如果当前属性为空则不进行sql的拼接, 该字段就不会更新
+    }
+    where id = :userInfo.id
+    
+}
