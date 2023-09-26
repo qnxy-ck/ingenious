@@ -1,4 +1,4 @@
-namespace com.demo.mapper.UserInfoMapper
+namespace com.demo.mapper
 
 import entity com.demo.data.entity.UserInfo
 

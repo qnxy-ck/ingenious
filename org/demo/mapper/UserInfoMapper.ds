@@ -1,0 +1,73 @@
+namespace org.demo.mapper
+
+import entity org.demo.entity.UserInfo
+
+import java.util.List
+
+// 用户信息相关操作示例
+
+
+
+// 根据id查询一条记录
+search selectById(id: Long) {
+    #select_where id = :id
+}
+
+// 根据id批量查询
+// 返回多条
+search mul selectByIds(idList: List<Long>) {
+    #select_where id #in idList
+}
+
+// 根据名称查询, 名称可为null时不参与查询条件
+search mul selectByName(name: String) {
+    #select_from
+        where name = :name::notNull
+}
+
+
+// 根据名称模糊查询
+search mul selectByNameKeyword(nameKeyword: String) {
+    #select_where name #like :nameKeyword
+}
+
+
+// 插入一条数据
+insert insertUserInfo(userInfo: UserInfo) {
+    #insert_into :userInfo {
+        :name
+        :age
+        :email
+        :birthday
+    }
+}
+
+// 根据id更新数据
+update updateUserInfoById(userInfo: UserInfo) {
+    #update_set :userInfo {
+        :name
+        :age
+        :email
+        :birthday
+    } where id = :userInfo.id
+}
+
+
+// 逻辑删除一条数据
+update updateLogicalDeleteById(id: Long) {
+    #update_logical_delete :id
+}
+
+// 逻辑恢复一条数据
+update updateLogicalRecoveryById(id: Long) {
+    #update_logical_recovery :id
+}
+
+
+// 根据id删除一条数据
+delete deleteById(id: Long) {
+    #delete_where id = :id
+}
+
+
+
