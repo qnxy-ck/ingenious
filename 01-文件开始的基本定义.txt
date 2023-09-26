@@ -1,5 +1,7 @@
-// 当前类所在的包路径, 路径中最后一个为当前所生成的类名
-namespace com.demo.mapper.UserInfoMapper
+// 文件名为当前类的名称
+
+// 当前类所在的包路径
+namespace com.demo.mapper
 
 // 导入类 并标志为当前类为实体类
 // 导入的实体类只能存在一个
