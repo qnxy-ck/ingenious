@@ -43,20 +43,20 @@ update boolean logicalDelete(id: Long) {
     // 等价sql
     // update user_info set deleted = true where id = :id
     // 如果更新数据的表为当前实体对应表 表名可以省略
-    // 如: #logical_delete :id
+    // 如: #update_logical_delete :id
     // tips: 那么这样实现的话, 怎么知道那个是逻辑字段呢? 把逻辑字段修改成什么值呢?
     // 这个目前觉得在表对应实体类种进行配置比较合适
-    #logical_delete user_info :id
+    #update_logical_delete user_info :id
     
 }
 
 
-// 逻辑删除多挑记录
+// 逻辑删除多条记录
 update boolean batchLogicalDelete(idList: List<Long>) {
 
-    // 对于单个逻辑删除, 仅需要加一个 mul 标记即可
+    // 相对于单个逻辑删除, 仅需要加一个 mul 标记即可
     // 等价sql
     // update user_info set deleted = true where id in (?, ?, ?)
-    #logical_delete user_info mul :idList
+    #update_logical_delete user_info mul :idList
 
 }

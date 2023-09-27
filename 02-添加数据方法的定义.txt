@@ -22,7 +22,7 @@ insert insertUserInfo(userInfo: UserInfo) {
     #insert_into user_info :userInfo {
         :username   // 如果表字段和 userInfo 对象中的属性字段名称一样直接这样写即可
         :age
-        birthday = :user_birthday   // 如果不一样则需要手动指定 
+        birthday = :userBirthday   // 如果不一样则需要手动指定, 自动对属性名称进行驼峰转换 
         :email
         created_at = now()  //
     }
