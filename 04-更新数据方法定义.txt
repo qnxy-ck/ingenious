@@ -50,6 +50,11 @@ update boolean logicalDelete(id: Long) {
     
 }
 
+// 逻辑恢复一条数据
+update updateLogicalRecoveryById(id: Long) {
+    #update_logical_recovery :id
+}
+
 
 // 逻辑删除多条记录
 update boolean batchLogicalDelete(idList: List<Long>) {
