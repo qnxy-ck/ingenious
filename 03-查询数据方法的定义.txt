@@ -10,7 +10,7 @@ import java.util.List
 // UserInfo 为查询返回结果类型, 如果查询结果类型为当前实体类类型一致, 可以省略否则则需要显示书写并且需要导入对应的类
 // selectById 为生成对于方法名称
 // id: Long 为查询参数
-search UserInfo selectById(id: Long) {
+search selectById(id: Long): UserInfo {
     
     select * from user_info where id = :id
     
@@ -18,7 +18,7 @@ search UserInfo selectById(id: Long) {
 
 // mul (multiple) 查询结果为多个
 // UserInfo 为查询返回结果类型, 如果查询结果类型为当前实体类类型一致, 可以省略否则则需要显示书写并且需要导入对应的类
-search mul UserInfo selectByNameAndEmail(username: String, email: String) {
+search selectByNameAndEmail(username: String, email: String): mul UserInfo {
 
     select * from user_info
         where
@@ -44,7 +44,8 @@ search mul UserInfo selectByNameAndEmail(username: String, email: String) {
 
 
 // 根据id查询多个 
-search mul selectByIds(idList: List<Long>) {
+// 在声明参数的时候, 如果参数为集合则需要 mul 关键字来声明
+search selectByIds(idList: mul Long): mul {
     
     select * from user_info
         // 等价为 id in (?, ?, ?)
@@ -56,7 +57,7 @@ search mul selectByIds(idList: List<Long>) {
 }
 
 // 模糊查询
-search mul selectByNameKeyword(nameKeyword: String) {
+search selectByNameKeyword(nameKeyword: String): mul {
     
     select * from user_info
         // 模糊查询
@@ -67,7 +68,7 @@ search mul selectByNameKeyword(nameKeyword: String) {
 }
 
 // -> 箭头语法
-search mul selectByEmail(email: String) {
+search selectByEmail(email: String): mul {
     
     select * from user_info
         // 对一个变量调用多个函数
@@ -84,7 +85,7 @@ search mul selectByEmail(email: String) {
 
 // 控制多行条件, 复杂表达式
 // #if 关键字
-search mul selectByStatus(status: Int) {
+search selectByStatus(status: Int): mul {
     
     select * from user_info
         #if status == 1 {
@@ -97,7 +98,7 @@ search mul selectByStatus(status: Int) {
 
 
 // #when 关键字
-search mul selectAllSortBy(sortType: Int) {
+search selectAllSortBy(sortType: Int): mul {
 
     select * from user_info
         order by
