@@ -86,14 +86,17 @@ search selectByEmail(email: String): mul {
     
     select * from user_info
         // 对一个变量调用多个函数
-        // 语法格式: :xxx -> boolean expression
         // 如: :email -> 1 == 1 && "s" == "l" || :status = 1
-        where email = :email -> notNull && hasContains("@")
+        where email = :email -> ::notNull && :email::hasContains("@")
+
         
-        // :email -> notNull && hasContains("@") 
-        // 是对 email 参数进行调用两个函数, 也可以在箭头后面对其他参数调用函数
-        // 如: :email -> :status?.notNull
-    
+        // 语法格式: :参数名称 -> boolean expression
+        // :username -> 在这里将进入 :username 的this指向, 如果在这里对 :username 使用函数, 可以简写为 ::test() , 可以省略 :username
+        // :email -> ::notNull && ::hasContains("@")
+        
+        // 如果 -> 后面只是对 -> 前参数调用一个函数, 则可简化为如下
+        // 简化前: :username -> ::test()
+        // 简化后: :username?.test()
 }
 
 
