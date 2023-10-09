@@ -1,0 +1,102 @@
+# 宏系列是以井号开头的一系列对于sql的宏处理指令, 作用是帮助在写sql的进行一定的简化
+
+规则:
+    全部已 '#' 井号开头, 后面接上对应的宏名称, 如: #in()
+    如果该宏指令没有或者不是必填参数则可以直接省略括号, 如: #in, #select_where
+    宏指令后面除了参数外还会存在若干必须参数(具体参数数量需参阅对应指令)
+    如: #in :idList 后面就需要一个特定的参数(:idList)
+    
+    一些复杂特殊的宏指令后面需要使用花括号进行处理
+    如: #insert_into(opt_table_name) {
+        ...
+    }
+    
+    具体使用查阅对应指令说明
+
+
+----------------------------------------------------------------------
+查询
+
+查询类的宏指令只能存在于 search 关键字声明的函数中!!!
+
+
+
+#in :xxx
+#not_in :xxx
+    使用场景: 在查询时处理集合参数对其in关键字查询
+    如: where id #in :idList
+    #in 会将参数idList展开, 等同于sql: where id in(?, ?, ?, ...)
+    进阶用法:
+        有时我们#in 后方的参数集合里面的元素可能是一个对象, 这时候就需要特殊处理.
+        #in(对象中的属性名称) :xxxList
+        如: where id #in(id) :userInfoList
+        取出集合元素userInfo对象中的id属性
+
+
+#like :xxx
+#like_l :xxx
+#like_r :xxx
+#not_like :xxx
+#not_like_l :xxx
+#not_like_r :xxx
+    使用场景: 使用模糊查询
+    如: where username #like :username
+    等同sql: where username like '%xxx%'
+    #like_[l/r] 则对应左右模糊
+
+
+#select_where username = :username and password = :password
+    使用场景: 快速进行单表条件查询
+    默认使用当前命名空间下映射的表进行查询, 如果非当前则为: #select_where(table_name) sql
+    查询字段为该查询函数声明的类属性
+    #select_where 等于sql: select 查询函数声明的返回值 from 当前命名空间映射表或者手动指定的表 where
+
+
+#select_by { :username and :password }
+    使用场景: 和#sleect_where类似, 区别是只能进行等式匹配
+    等式匹配规则:
+        如果花括号内仅有一个参数则可以省略大括号
+        #select_by :username = select * from user_info where username = :username
+        #select_by { :username and :password } =  select * from user_info where username = :username and password
+        意思就是会在所有参数前面 加上该参数同名的表字段名称, 并且仅进行等式查询
+
+
+----------------------------------------------------------------------
+ 添加
+ 
+ 
+添加类的宏指令只能存在于 insert 关键字声明的函数中!!!
+
+
+#insert_into(默认为当前命名空间下的表, 如需手动指定在这里填上. 仅为默认的情况, 可省略该括号) :userInfo {
+// 每个字段要换行
+    :username   // 等于 username = :username 如果表字段和数据字段不一致则需要手动指定
+    :password::encipher("MD5") // 可以调用函数, 只能使用 :: 调用函数
+    :age
+    :gender
+    :email
+    user_birthday = :birthday   // 如果表字段和数据字段不一致则需要手动指定
+    created_at = now()  // 等号前为字段, 等号后为该字段的值. 一切以 : 访问的参数在sql中一律替换为 ? 进行查询, 不必担心sql注入
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

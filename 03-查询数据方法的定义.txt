@@ -16,17 +16,6 @@ search selectById(id: Long): UserInfo {
     
 }
 
-search selectByUsernameAndPassword(username: String, password: String) : mul {
-    
-    select * from user_info
-        where username = :username
-            and password = :password::encipher   // 对该参数使用 encipher 函数, 将加密后的值参与查询
-
-    // 上述sql等同如下
-    // select * from user_info where username = '用户名' and password = '加密后的密码'
-    
-}
-
 
 // mul (multiple) 查询结果为多个
 // UserInfo 为查询返回结果类型, 如果查询结果类型为当前实体类类型一致, 可以省略否则则需要显示书写并且需要导入对应的类
@@ -46,6 +35,17 @@ search selectByNameAndEmail(username: String, email: String): mul UserInfo {
             // 可以理解为 Tools.hasContains(email, "@")
             // 用户也可以实现某些接口的情况下, 自定义自己的函数
         
+}
+
+search selectByUsernameAndPassword(username: String, password: String) : mul {
+    
+    select * from user_info
+        where username = :username
+            and password = :password::encipher   // 对该参数使用 encipher 函数, 将加密后的值参与查询
+
+    // 上述sql等同如下
+    // select * from user_info where username = '用户名' and password = '加密后的密码'
+    
 }
 
 // search mul selectByName(username: String?) {
@@ -87,12 +87,12 @@ search selectByEmail(email: String): mul {
     select * from user_info
         // 对一个变量调用多个函数
         // 如: :email -> 1 == 1 && "s" == "l" || :status = 1
-        where email = :email -> ::notNull && :email::hasContains("@")
+        where email = :email -> $::notNull && $::hasContains("@")
 
         
         // 语法格式: :参数名称 -> boolean expression
-        // :username -> 在这里将进入 :username 的this指向, 如果在这里对 :username 使用函数, 可以简写为 ::test() , 可以省略 :username
-        // :email -> ::notNull && ::hasContains("@")
+        // :username -> 在这里将进入 :username 的this指向, 如果在这里对 :username 使用函数, 可以简写为 $::test(). $ == :username
+        // :email -> $::notNull && $::hasContains("@")
         
         // 如果 -> 后面只是对 -> 前参数调用一个函数, 则可简化为如下
         // 简化前: :username -> ::test()
@@ -136,6 +136,27 @@ search selectAllSortBy(sortType: Int): mul {
     
 }
 
+// 新增 ? 语义
+// 可以在参数后面直接使用
+// 如: where username = :username?
+// 如果username为null则当前行不参与查询, 而不是需要显示调用notNull方法(where username = :username?.notNull)
+
+// 可在 :: 调用的函数后面使用, 调用者为null或者函数返回结果为null, 则当前行不参与查询
+// 如: where username = :username::appand("x")?
+
+
+search selectInfo(conditions: QueryParams) {
+    select * from user_info
+        where
+            id #in :conditions.idList?   // 自动展开进行in查询, 如果idList中是对象, 则需要取出对象的某个值进行in查询. 示例: id #in(id) :conditions.objList
+            and username #like :conditions.username?    // 如果username等于null, 则本行不参与查询
+            and password = :conditions.password::encipher("MD5")?   // 调用 encipher 函数将密码信息MD5进行加密后进行查询, 并且密码为空此行不参与查询
+            and email = :conditions.email?.regexMatch("@")  // 使用函数regexMatch进行正则匹配验证, '?.' 调用函数符号为regexMatch函数返回true则本行参与查询. 如: :username?.notBlank
+            and phone_num = :conditions.phoneNum -> :conditions.phoneNum != null && :conditions.phoneNum::length == 11
+            // '->' 符号相比 '?.' 区别在于你可以在 "->" 后面写复杂逻辑表达式. 如果需要更复杂的则可以实现自定义函数, 然后使用 '?.' 符号进行函数调用来简化
+            
+// 以上仅是展示用法, 不必关心sql查询逻辑
+}
 
 
 
