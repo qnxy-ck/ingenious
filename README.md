@@ -17,6 +17,7 @@ insert insertUserInfo(userInfo: UserInfo) {
     #insert_into user_info :userInfo {
         :username  
         :age
+        :phoneNum::encipher("SM4")   // 这里的属性, 会自动转换为 phone_num, 并且进行加密后插入
         :birthday
         :email
         created_at = now()
