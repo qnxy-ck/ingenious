@@ -26,7 +26,7 @@ insert insertUserInfo(userInfo: UserInfo) {
 
 
 // 根据id查询一条数据
-search UserInfo selectById(id: Long) {
+search selectById(id: Long) {
 
     #select_by :id
     
