@@ -11,6 +11,20 @@ namespace com.demo.mapper
 
 import entity com.demo.data.entity.UserInfo
 
+search selectInfo(idList: mul Long, username: String, password: String, email: String, phoneNum: String): mul {
+    select * from user_info
+        where
+            id #in :idList?   // 自动展开进行in查询, 如果idList中是对象, 则需要取出对象的某个值进行in查询. 示例: id #in(id) :conditions.objList
+            and username #like :username?    // 如果username等于null, 则本行不参与查询
+            and password = :password::encipher("MD5")?   // 调用 encipher 函数将密码信息MD5进行加密后进行查询, 并且密码为空此行不参与查询
+            and email = :email?.regexMatch("@")  // 使用函数regexMatch进行正则匹配验证, '?.' 调用函数符号为regexMatch函数返回true则本行参与查询. 如: :username?.notBlank
+            and phone_num = :phoneNum -> $ != null && $::length == 11
+            // '->' 符号相比 '?.' 区别在于你可以在 "->" 后面写复杂逻辑表达式. 如果需要更复杂的则可以实现自定义函数, 然后使用 '?.' 符号进行函数调用来简化
+            
+// 以上仅是展示用法, 不必关心sql查询逻辑
+}
+
+
 // 添加数据
 insert insertUserInfo(userInfo: UserInfo) {
     
