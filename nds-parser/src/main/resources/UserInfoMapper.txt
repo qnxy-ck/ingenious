@@ -1,0 +1,6 @@
+namespace org.nds.mapper
+
+import entity org.nds.mapper.UserInfo 1
+search selectById(id: Int) {
+
+}
