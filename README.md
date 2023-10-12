@@ -18,7 +18,7 @@ XML的动态sql方式确实比较臃肿, 当然可以写在其他文件格式中
 
 ## _语法展示(详细请看对应描述文件):_
 
-```txt
+```text
 
 namespace com.demo.mapper
 
