@@ -1,9 +1,6 @@
 package org.nds.lexer;
 
-import org.nds.token.IdentifierToken;
-import org.nds.token.NewLineToken;
-import org.nds.token.Token;
-import org.nds.token.TokenLocation;
+import org.nds.token.*;
 import org.nds.token.keyword.*;
 import org.nds.token.symbol.*;
 
@@ -28,15 +25,15 @@ public final class Lexer {
 
             // -----------------------------------------------------------------------------------------
             // 跳过空白符
-            new MatchingInformation<>(compile("^[ \t]+"), nullBiFun()),
+            new MatchingInformation<>(compile("^[ \t]+"), Lexer::nullBiFun),
 
             // -----------------------------------------------------------------------------------------
             // 跳过单行注释
-            new MatchingInformation<>(compile("^//.*"), nullBiFun()),
+            new MatchingInformation<>(compile("^//.*"), Lexer::nullBiFun),
 
             // -----------------------------------------------------------------------------------------
             // 跳过多行注释
-            new MatchingInformation<>(compile("^/\\*[\\s\\S]*?\\*/"), nullBiFun()),
+            new MatchingInformation<>(compile("^/\\*[\\s\\S]*?\\*/"), Lexer::nullBiFun),
 
             // -----------------------------------------------------------------------------------------
             // 符号
@@ -54,6 +51,20 @@ public final class Lexer {
 
 
             // -----------------------------------------------------------------------------------------
+            // 数字            
+            new MatchingInformation<>(compile("^\\d+"), NumericLiteralToken::new),
+
+            // -----------------------------------------------------------------------------------------
+            // 等式运算符: ==, !=
+            new MatchingInformation<>(compile("^[=!]="), EqualityToken::operatorOf),
+
+            // -----------------------------------------------------------------------------------------
+            // 赋值运算符: =, *=, /=, +=. -=
+            new MatchingInformation<>(compile("^="), SimpleAssignToken::new),
+            new MatchingInformation<>(compile("^[*/+-]="), ComplexAssignToken::operatorOf),
+
+
+            // -----------------------------------------------------------------------------------------
             // 数学运算符: +, -, *, /
             new MatchingInformation<>(compile("^[+-]"), AdditiveToken::operatorOf),
             new MatchingInformation<>(compile("^[*/]"), MultiplicativeToken::operatorOf),
@@ -68,9 +79,20 @@ public final class Lexer {
             new MatchingInformation<>(compile("^\\bmul\\b"), MulToken::new),
 
 
+            new MatchingInformation<>(compile("^\\btrue\\b"), Lexer::boolToken),
+            new MatchingInformation<>(compile("^\\bfalse\\b"), Lexer::boolToken),
+            new MatchingInformation<>(compile("^\\bnull\\b"), NullToken::new),
+
+
             // -----------------------------------------------------------------------------------------
             // 标识符
             new MatchingInformation<>(compile("^\\w+"), IdentifierToken::new),
+
+
+            // -----------------------------------------------------------------------------------------
+            // 字符串
+            new MatchingInformation<>(compile("^\"[^\"]*\""), StringLiteralToken::new),
+            new MatchingInformation<>(compile("^'[^']*'"), StringLiteralToken::new),
 
     };
     private final String text;
@@ -87,8 +109,13 @@ public final class Lexer {
         this.text = text;
     }
 
-    private static <V> BiFunction<String, TokenLocation, Token<V>> nullBiFun() {
-        return (v, it) -> null;
+    private static <V> Token<V> nullBiFun(String v, TokenLocation tokenLocation) {
+        return null;
+    }
+
+    private static Token<Boolean> boolToken(String v, TokenLocation tokenLocation) {
+        final var f = Boolean.parseBoolean(v);
+        return f ? new TrueToken(true, tokenLocation) : new FalseToken(false, tokenLocation);
     }
 
     /**
