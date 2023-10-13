@@ -48,6 +48,7 @@ public final class Lexer {
             new MatchingInformation<>(compile("^\\?\\."), QuestionMarkPointToken::new),
             new MatchingInformation<>(compile("^\\?"), QuestionMarkToken::new),
             new MatchingInformation<>(compile("^->"), ArrowToken::new),
+            new MatchingInformation<>(compile("^\\$"), DollarToken::new),
 
 
             // -----------------------------------------------------------------------------------------

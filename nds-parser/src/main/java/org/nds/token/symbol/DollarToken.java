@@ -1,14 +1,16 @@
-package org.nds.token.keyword;
+package org.nds.token.symbol;
 
-import org.nds.token.LiteralToken;
+import org.nds.token.StringValueToken;
 import org.nds.token.TokenLocation;
 
 /**
+ * $
+ *
  * @author Qnxy
  * 2023/10/13
  */
-public record NullToken(
+public record DollarToken(
         String value,
         TokenLocation tokenLocation
-) implements LiteralToken<String> {
+) implements StringValueToken {
 }

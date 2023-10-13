@@ -244,27 +244,152 @@ public final class Parser {
         return list;
     }
 
-
     /*
         SearchFunStatement
-            : ZipSqlLiteral
-            | SimpleIfStatement
+            : SimpleIfStatement
+            | ArrowIfStatement
+            | FunCallExpression
+            | ZipSqlLiteral
             ;
      */
     private ASTree searchFunStatement() {
         this.ignoreNewLines();
 
+        // ArrowIfStatement
+        if (this.tokenMatching(ArrowToken.class, NewLineToken.class)) {
+            return this.arrowIfStatement();
+        }
+
+        // SimpleIfStatement
         if (this.tokenMatching(QuestionMarkToken.class, NewLineToken.class)
                 || this.tokenMatching(QuestionMarkPointToken.class, NewLineToken.class)
         ) {
             return this.simpleIfStatement();
         }
 
+        // FunCallExpression
         if (this.test(ColonToken.class)) {
             return this.funCallExpression();
         }
 
+        // ZipSqlLiteral
         return this.zipSqlLiteral();
+    }
+
+    /*
+        ArrowIfStatement
+            : ZipSqlLiteral MemberExpression '->' ConditionalExpression NewLines
+            ;
+    */
+    private ArrowIfStatement arrowIfStatement() {
+        final var zipSqlLiteral = this.zipSqlLiteral();
+        if (zipSqlLiteral.value().isBlank()) {
+            final var exStr = String.format(
+                    "Unsupported syntax. Illegal dangling control statement -> Row: [%s]",
+                    this.lookahead().tokenLocation().lineNumer()
+            );
+            throw new SyntaxException(exStr, this.lookahead());
+        }
+
+        if (!this.test(ColonToken.class)) {
+            final var exStr = String.format(
+                    "Unsupported syntax. The parameter information that was called does not exist. Correct way: [sql :username -> conditionalExpression] -> Row: [%s]",
+                    this.lookahead().tokenLocation().lineNumer()
+            );
+            throw new SyntaxException(exStr, this.lookahead());
+        }
+
+        // MemberExpression
+        final var memberExpression = this.memberExpression();
+
+        // ->
+        this.consume(ArrowToken.class);
+
+        // ConditionalExpression
+        final var test = this.conditionalExpression();
+
+        this.ignoreNewLines(true);
+        return new ArrowIfStatement(memberExpression, test, zipSqlLiteral);
+    }
+
+    /*
+        ConditionalExpression
+            : EqualityExpression
+            ;
+     */
+    private ASTree conditionalExpression() {
+        return this.equalityExpression();
+    }
+
+    /*
+        EQUALITY_OPERATOR: ==, !=
+        x == y
+        x != y
+        
+        EqualityExpression
+            : LeftHandSideExpression
+            | EqualityExpression EQUALITY_OPERATOR LeftHandSideExpression
+            ;
+     */
+    private ASTree equalityExpression() {
+        ASTree left = this.leftHandSideExpression();
+
+        while (this.test(EqualityToken.class)) {
+            EqualityToken operator = this.consume(EqualityToken.class);
+
+            ASTree right = this.leftHandSideExpression();
+            left = new BinaryExpression(operator, left, right);
+        }
+
+        return left;
+    }
+
+    /*
+        LeftHandSideExpression
+            : PrimaryExpression
+            | FunCallExpression
+            | DollarFunCallExpression
+            ;
+     */
+    private ASTree leftHandSideExpression() {
+        if (this.test(ColonToken.class)) {
+            return this.funCallExpression();
+        }
+
+        if (this.test(DollarToken.class)) {
+            return this.dollarFunCallExpression();
+        }
+
+        return this.primaryExpression();
+    }
+
+    /*
+        DollarFunCallExpression
+            : DollarExpression
+            | '$' '::' Identifier OptArguments
+            ;
+     */
+    private ASTree dollarFunCallExpression() {
+        this.consume(DollarToken.class);
+
+        if (this.test(DoubleColonToken.class)) {
+            this.consume(DoubleColonToken.class);
+
+            final var funName = this.consume(IdentifierToken.class).value();
+            final var arguments = this.optArguments();
+            return new DollarFunCallExpression(funName, arguments);
+        }
+
+        return this.dollarExpression();
+    }
+
+    /*
+        DollarExpression
+            : '$'
+            ;
+     */
+    private DollarExpression dollarExpression() {
+        return new DollarExpression();
     }
 
     /*
@@ -275,9 +400,8 @@ public final class Parser {
     private ASTree simpleIfStatement() {
         final var zipSqlLiteral = this.zipSqlLiteral();
         if (zipSqlLiteral.value().isBlank()) {
-
             final var exStr = String.format(
-                    "Unsupported syntax. Illegal dangling control statement -> [%s]",
+                    "Unsupported syntax. Illegal dangling control statement -> Row: [%s]",
                     this.lookahead().tokenLocation().lineNumer()
             );
             throw new SyntaxException(exStr, this.lookahead());
@@ -302,10 +426,7 @@ public final class Parser {
     private SqlLiteral zipSqlLiteral() {
         final var list = new ArrayList<Token<?>>();
 
-        while (!(
-                this.test(ColonToken.class)
-                        || this.test(NewLineToken.class)
-        )) {
+        while (!(this.test(ColonToken.class) || this.test(NewLineToken.class))) {
             list.add(this.consume(Token.class));
         }
 
@@ -342,7 +463,7 @@ public final class Parser {
 
         if (!this.test(QuestionMarkToken.class)) {
             final var exStr = String.format(
-                    "Unsupported syntax. Maybe there's a question mark at the end -> [%s]",
+                    "Unsupported syntax. Maybe there's a question mark at the end -> Row: [%s]",
                     this.lookahead().tokenLocation().lineNumer());
             throw new SyntaxException(exStr, this.lookahead());
         }
@@ -439,35 +560,11 @@ public final class Parser {
 
     /*
         Argument
-            : Members
-            | BooleanLiteral
-            | StringLiteral
-            | NullLiteral
-            | NumericLiteral
+            : PrimaryExpression
             ;
      */
     private ASTree argument() {
-        if (this.test(ColonToken.class)) {
-            return this.memberExpression();
-        }
-
-        if (this.test(BooleanToken.class)) {
-            return this.booleanLiteral();
-        }
-
-        if (this.test(StringLiteralToken.class)) {
-            return this.stringLiteral();
-        }
-
-        if (this.test(NullToken.class)) {
-            return this.nullLiteral();
-        }
-
-        if (this.test(NumericLiteralToken.class)) {
-            return this.numericLiteral();
-        }
-
-        throw new SyntaxException("(argument) 未支持的类型: " + this.lookahead(), this.lookahead());
+        return this.primaryExpression();
     }
 
     /*
@@ -564,6 +661,54 @@ public final class Parser {
     private Identifier identifier() {
         final var identifierToken = this.consume(IdentifierToken.class);
         return new Identifier(identifierToken.value());
+    }
+
+    /*
+        PrimaryExpression
+            : MemberExpression
+            | Literal
+            ;
+     */
+    private ASTree primaryExpression() {
+        // MemberExpression
+        if (this.test(ColonToken.class)) {
+            return this.memberExpression();
+        }
+
+        // Literal
+        if (this.test(LiteralToken.class)) {
+            return this.literal();
+        }
+
+        throw new SyntaxException("(primaryExpression) 未支持的类型: " + this.lookahead(), this.lookahead());
+    }
+
+    /*
+        Literal
+            : BooleanLiteral
+            | NullLiteral
+            | StringLiteral
+            | NumericLiteral
+            ;
+     */
+    private ASTree literal() {
+        if (this.test(BooleanToken.class)) {
+            return this.booleanLiteral();
+        }
+
+        if (this.test(NullToken.class)) {
+            return this.nullLiteral();
+        }
+
+        if (this.test(StringLiteralToken.class)) {
+            return this.stringLiteral();
+        }
+
+        if (this.test(NumericLiteralToken.class)) {
+            return this.numericLiteral();
+        }
+
+        throw new SyntaxException("Literal: unexpected literal production\n" + this.lookahead(), this.lookahead());
     }
 
     /*
@@ -671,7 +816,7 @@ public final class Parser {
      * @param tokenType 待匹配的token类型
      * @return true 匹配成功
      */
-    private boolean test(Class<? extends Token<?>> tokenType) {
+    private <T extends Token<?>> boolean test(Class<T> tokenType) {
         return tokenType.isInstance(this.lookahead());
     }
 

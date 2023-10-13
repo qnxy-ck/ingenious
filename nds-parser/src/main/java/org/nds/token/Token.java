@@ -1,5 +1,7 @@
 package org.nds.token;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+
 /**
  * token信息
  *
@@ -8,6 +10,7 @@ package org.nds.token;
  */
 public interface Token<V> {
 
+    @JsonValue
     V value();
 
     TokenLocation tokenLocation();

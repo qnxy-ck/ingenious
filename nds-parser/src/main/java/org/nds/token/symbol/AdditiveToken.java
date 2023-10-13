@@ -1,6 +1,6 @@
 package org.nds.token.symbol;
 
-import org.nds.token.StringValueToken;
+import org.nds.token.OperatorToken;
 import org.nds.token.TokenLocation;
 
 import java.util.Arrays;
@@ -11,7 +11,7 @@ import java.util.Arrays;
  * @author Qnxy
  * 2023/10/12
  */
-public enum AdditiveToken implements StringValueToken {
+public enum AdditiveToken implements OperatorToken {
     ADDITION("+"),
     SUBTRACTION("-");
 

@@ -1,6 +1,6 @@
 package org.nds.token.symbol;
 
-import org.nds.token.StringValueToken;
+import org.nds.token.OperatorToken;
 import org.nds.token.TokenLocation;
 
 import java.util.Arrays;
@@ -11,7 +11,7 @@ import java.util.Arrays;
  * @author Qnxy
  * 2023/10/13
  */
-public enum EqualityToken implements StringValueToken {
+public enum EqualityToken implements OperatorToken {
     EQUALITY("=="),
     NOT_EQUALITY("!=");
 
@@ -44,5 +44,13 @@ public enum EqualityToken implements StringValueToken {
 
     public void setTokenLocation(TokenLocation tokenLocation) {
         this.tokenLocation = tokenLocation;
+    }
+
+    @Override
+    public String toString() {
+        return "EqualityToken{" +
+                "operator='" + operator + '\'' +
+                ", tokenLocation=" + tokenLocation +
+                '}';
     }
 }

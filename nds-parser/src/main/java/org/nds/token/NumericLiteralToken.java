@@ -7,5 +7,5 @@ package org.nds.token;
 public record NumericLiteralToken(
         String value,
         TokenLocation tokenLocation
-) implements StringValueToken {
+) implements LiteralToken<String> {
 }

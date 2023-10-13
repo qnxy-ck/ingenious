@@ -1,6 +1,6 @@
 package org.nds.token.symbol;
 
-import org.nds.token.StringValueToken;
+import org.nds.token.OperatorToken;
 import org.nds.token.TokenLocation;
 
 /**
@@ -12,5 +12,5 @@ import org.nds.token.TokenLocation;
 public record SimpleAssignToken(
         String value,
         TokenLocation tokenLocation
-) implements StringValueToken {
+) implements OperatorToken {
 }
