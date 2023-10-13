@@ -440,6 +440,10 @@ public final class Parser {
     /*
         Argument
             : Members
+            | BooleanLiteral
+            | StringLiteral
+            | NullLiteral
+            | NumericLiteral
             ;
      */
     private ASTree argument() {
@@ -562,23 +566,44 @@ public final class Parser {
         return new Identifier(identifierToken.value());
     }
 
+    /*
+        BooleanLiteral
+            : 'true'
+            | 'false'
+            ;
+     */
     private BooleanLiteral booleanLiteral() {
         final var token = this.consume(BooleanToken.class);
         return new BooleanLiteral(token.value());
     }
 
+    /*
+        StringLiteral
+            : STRING
+            ;
+     */
     private StringLiteral stringLiteral() {
         final var token = this.consume(StringLiteralToken.class);
         final var v = token.value().substring(1, token.value().length() - 1);
         return new StringLiteral(v, token.value());
     }
 
+    /*
+        NullLiteral
+            : 'null'
+            ;
+     */
     private NullLiteral nullLiteral() {
         this.consume(NullToken.class);
 
         return new NullLiteral();
     }
 
+    /*
+        NumericLiteral
+            : NUMBER
+            ;
+     */
     private NumericLiteral numericLiteral() {
         final var token = this.consume(NumericLiteralToken.class);
         return new NumericLiteral(token.value());
