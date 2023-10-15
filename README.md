@@ -1,8 +1,11 @@
-# new-ds (new dynamic sql)
+<div style="text-align: center;">
+    <h1>Ingenious (new dynamic sql)</h1>
+    全新的动态SQL书写方式
+</div>
 
-_颠覆传统动态sql书写方式_
+---
 
-## _设计思想_
+## _#设计思想_
 
 新的开篇目的不是为了创造重复的轮子, 创新来源于对以往经验的质疑, 以做出更完善实用便利为目的.
 
@@ -16,7 +19,7 @@ XML的动态sql方式确实比较臃肿, 当然可以写在其他文件格式中
 
 那么就有人要问了没有接口我们怎么去调用呢? 使用这个就可以像我们在使用lombok时候一样, 会为我们自动生成相关的接口等, 我们只需要关心我们的sql怎么去写就行了.
 
-## _语法展示(详细请看对应描述文件):_
+## _#语法展示(详细请看对应描述文件):_
 
 ```text
 
@@ -31,7 +34,7 @@ search selectInfo(idList: mul Long, username: String, password: String, email: S
             and username #like :username?    // 如果username等于null, 则本行不参与查询
             and password = :password::encipher("MD5")?   // 调用 encipher 函数将密码信息MD5进行加密后进行查询, 并且密码为空此行不参与查询
             and email = :email?.regexMatch("@")  // 使用函数regexMatch进行正则匹配验证, '?.' 调用函数符号为regexMatch函数返回true则本行参与查询. 如: :username?.notBlank
-            and phone_num = :phoneNum -> $ != null && $::length == 11
+            and phone_num = :phoneNum -> this != null && this::length == 11
             // '->' 符号相比 '?.' 区别在于你可以在 "->" 后面写复杂逻辑表达式. 如果需要更复杂的则可以实现自定义函数, 然后使用 '?.' 符号进行函数调用来简化
             
 // 以上仅是展示用法, 不必关心sql查询逻辑
