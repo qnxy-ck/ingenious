@@ -176,11 +176,11 @@ public final class Parser {
             ;
      */
     private FunTypeDeclaration searchFunTypeDeclaration() {
-        final var multiple = this.test(MulToken.class);
+        final var multiple = this.test(MultiToken.class);
 
         // OptMul
         if (multiple) {
-            this.consume(MulToken.class);
+            this.consume(MultiToken.class);
         }
 
         final var typeValue = this._typeValue();
@@ -191,15 +191,15 @@ public final class Parser {
     /*
         SearchReturnDeclaration
             : ':' TypeValue
-            | ':' 'mul' TypeValue
+            | ':' 'multi' TypeValue
             ;
      */
     private FunTypeDeclaration searchReturnDeclaration() {
         this.consume(ColonToken.class);
-        final var multiple = this.test(MulToken.class);
+        final var multiple = this.test(MultiToken.class);
 
         if (multiple) {
-            this.consume(MulToken.class);
+            this.consume(MultiToken.class);
         }
 
         if (this.test(OpenCurlyBracketToken.class)) {

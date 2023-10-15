@@ -59,9 +59,9 @@ update updateLogicalRecoveryById(id: Long) {
 // 逻辑删除多条记录
 update boolean batchLogicalDelete(idList: List<Long>) {
 
-    // 相对于单个逻辑删除, 仅需要加一个 mul 标记即可
+    // 相对于单个逻辑删除, 仅需要加一个 multi 标记即可
     // 等价sql
     // update user_info set deleted = true where id in (?, ?, ?)
-    #update_logical_delete user_info mul :idList
+    #update_logical_delete user_info multi :idList
 
 }

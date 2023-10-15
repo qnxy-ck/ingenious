@@ -1,7 +1,6 @@
-<div style="text-align: center;">
-    <h1>Ingenious (new dynamic sql)</h1>
-    全新的动态SQL书写方式
-</div>
+# Ingenious (new dynamic sql)
+
+全新的动态SQL书写方式
 
 ---
 
@@ -27,7 +26,7 @@ namespace com.demo.mapper
 
 import entity com.demo.data.entity.UserInfo
 
-search selectInfo(idList: mul Long, username: String, password: String, email: String, phoneNum: String): mul {
+search selectInfo(idList: multi Long, username: String, password: String, email: String, phoneNum: String): multi {
     select * from user_info
         where
             id #in :idList?   // 自动展开进行in查询, 如果idList中是对象, 则需要取出对象的某个值进行in查询. 示例: id #in(id) :conditions.objList
@@ -63,7 +62,7 @@ search selectById(id: Long) {
 }
 
 // 查询多条
-search selectByUsernameAndEmail(username: String, email: String): mul {
+search selectByUsernameAndEmail(username: String, email: String): multi {
 
     select * from user_info
         where
@@ -73,7 +72,7 @@ search selectByUsernameAndEmail(username: String, email: String): mul {
 }
 
 // 根据id查询多个 
-search selectByIds(idList: mul Long): mul {
+search selectByIds(idList: multi Long): multi {
     
     select * from user_info
         where id #in :idList
@@ -81,7 +80,7 @@ search selectByIds(idList: mul Long): mul {
 }
 
 // 模糊查询
-search selectByNameKeyword(nameKeyword: String): mul {
+search selectByNameKeyword(nameKeyword: String): multi {
     
     select * from user_info
         where name #like :nameKeyword
@@ -89,7 +88,7 @@ search selectByNameKeyword(nameKeyword: String): mul {
 }
 
 // -> 箭头语法的使用
-search selectByEmail(email: String): mul {
+search selectByEmail(email: String): multi {
     
     select * from user_info
         where email = :email -> $ != null && $::hasContains("@")    // 要求 :email 不等于null并且包含@符号
@@ -97,7 +96,7 @@ search selectByEmail(email: String): mul {
 }
 
 
-search selectByPhoneNum(phoneNum: String): mul {
+search selectByPhoneNum(phoneNum: String): multi {
     
     select * from user_info
         where phone_num = :phoneNum::encipher("SM4")    // 进行加密后查询

@@ -51,7 +51,7 @@ mapping sss CustomUserInfo by xxx {
 // 配合 #smart_column 使用后, 则会自动根据定义查询指定字段
 
 // 批量查询
-search selectByUsername(username: String): mul by xxx {
+search selectByUsername(username: String): multi by xxx {
 
     select #smart_column
         from user_info

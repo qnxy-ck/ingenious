@@ -76,7 +76,7 @@ public final class Lexer {
             new MatchingInformation<>(compile("^\\bimport\\b"), ImportToken::new),
             new MatchingInformation<>(compile("^\\bentity\\b"), EntityToken::new),
             new MatchingInformation<>(compile("^\\bsearch\\b"), SearchToken::new),
-            new MatchingInformation<>(compile("^\\bmul\\b"), MulToken::new),
+            new MatchingInformation<>(compile("^\\bmulti\\b"), MultiToken::new),
 
 
             new MatchingInformation<>(compile("^\\btrue\\b"), Lexer::boolToken),

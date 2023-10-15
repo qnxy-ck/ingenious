@@ -6,7 +6,7 @@ import org.ingenious.token.TokenLocation;
 /**
  * @author Qnxy
  */
-public record MulToken(
+public record MultiToken(
         String value,
         TokenLocation tokenLocation
 ) implements StringValueToken {
