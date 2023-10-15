@@ -87,7 +87,7 @@ search selectByEmail(email: String): multi {
     select * from user_info
         // 对一个变量调用多个函数
         // 如: :email -> 1 == 1 && "s" == "l" || :status = 1
-        where email = :email -> $::notNull && $::hasContains("@")
+        where email = :email -> this::notNull && this::hasContains("@")
 
         
         // 语法格式: :参数名称 -> boolean expression

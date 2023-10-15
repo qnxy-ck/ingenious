@@ -13,7 +13,7 @@ search selectById(id: Int) {
          6 :id::test(false)?.test2
          8 :id::test(:id, false)
          xx :id -> :ss::test(1) == :x.y.z.s::test
-         ss :id -> :ss::test(1) == $::p(false)
+         ss :id -> :ss::test(1) == this::p(false)
          x :id?.test(null)
          7 :id::test("a", "b")?.test2
 }

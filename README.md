@@ -91,7 +91,7 @@ search selectByNameKeyword(nameKeyword: String): multi {
 search selectByEmail(email: String): multi {
     
     select * from user_info
-        where email = :email -> $ != null && $::hasContains("@")    // 要求 :email 不等于null并且包含@符号
+        where email = :email -> this != null && this::hasContains("@")    // 要求 :email 不等于null并且包含@符号
 
 }
 
@@ -112,7 +112,7 @@ update updateUserInfo(userInfo: UserInfo) {
     #update_set :userInfo {
         :username?.notBlank // 不为null并且不为空字符串才更新
         :age
-        :email -> $ != null && $::hasContains("@")  // 不为null并且包含@符号才更新该字段
+        :email -> this != null && this::hasContains("@")  // 不为null并且包含@符号才更新该字段
         :birthday?  // 为null则不更新该字段
     }
     where id = :userInfo.id

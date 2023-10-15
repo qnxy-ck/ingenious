@@ -347,7 +347,7 @@ public final class Parser {
         LeftHandSideExpression
             : PrimaryExpression
             | FunCallExpression
-            | DollarFunCallExpression
+            | ThisFunCallExpression
             ;
      */
     private ASTree leftHandSideExpression() {
@@ -355,40 +355,40 @@ public final class Parser {
             return this.funCallExpression();
         }
 
-        if (this.test(DollarToken.class)) {
-            return this.dollarFunCallExpression();
+        if (this.test(ThisToken.class)) {
+            return this.thisFunCallExpression();
         }
 
         return this.primaryExpression();
     }
 
     /*
-        DollarFunCallExpression
-            : DollarExpression
-            | '$' '::' Identifier OptArguments
+        thisFunCallExpression
+            : ThisExpression
+            | 'this' '::' Identifier OptArguments
             ;
      */
-    private ASTree dollarFunCallExpression() {
-        this.consume(DollarToken.class);
+    private ASTree thisFunCallExpression() {
+        this.consume(ThisToken.class);
 
         if (this.test(DoubleColonToken.class)) {
             this.consume(DoubleColonToken.class);
 
             final var funName = this.consume(IdentifierToken.class).value();
             final var arguments = this.optArguments();
-            return new DollarFunCallExpression(funName, arguments);
+            return new ThisFunCallExpression(funName, arguments);
         }
 
-        return this.dollarExpression();
+        return this.thisExpression();
     }
 
     /*
-        DollarExpression
-            : '$'
+        ThisExpression
+            : 'this'
             ;
      */
-    private DollarExpression dollarExpression() {
-        return new DollarExpression();
+    private ThisExpression thisExpression() {
+        return new ThisExpression();
     }
 
     /*

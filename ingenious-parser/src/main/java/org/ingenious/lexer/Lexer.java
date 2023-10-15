@@ -47,7 +47,6 @@ public final class Lexer {
             new MatchingInformation<>(compile("^\\?\\."), QuestionMarkPointToken::new),
             new MatchingInformation<>(compile("^\\?"), QuestionMarkToken::new),
             new MatchingInformation<>(compile("^->"), ArrowToken::new),
-            new MatchingInformation<>(compile("^\\$"), DollarToken::new),
 
 
             // -----------------------------------------------------------------------------------------
@@ -77,8 +76,8 @@ public final class Lexer {
             new MatchingInformation<>(compile("^\\bentity\\b"), EntityToken::new),
             new MatchingInformation<>(compile("^\\bsearch\\b"), SearchToken::new),
             new MatchingInformation<>(compile("^\\bmulti\\b"), MultiToken::new),
-
-
+            new MatchingInformation<>(compile("^\\bthis\\b"), ThisToken::new),
+            
             new MatchingInformation<>(compile("^\\btrue\\b"), Lexer::boolToken),
             new MatchingInformation<>(compile("^\\bfalse\\b"), Lexer::boolToken),
             new MatchingInformation<>(compile("^\\bnull\\b"), NullToken::new),
