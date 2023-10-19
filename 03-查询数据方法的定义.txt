@@ -4,162 +4,26 @@ import entity org.ingenious.demo.entity.UserInfo
 
 import java.util.List
 
-
-// 根据id查询一条数据
 // search 为查询方法定义关键字
-// UserInfo 为查询返回结果类型, 如果查询结果类型为当前实体类类型一致, 可以省略否则则需要显示书写并且需要导入对应的类
-// selectById 为生成对于方法名称
+// selectById 该方法的名称
 // id: Long 为查询参数
+// UserInfo 查询映射类型. 如果该类型和 entity 类型一致, 则可省略
 search selectById(id: Long): UserInfo {
-    
-    select * from user_info where id = :id
-    
+    // sql
 }
 
 
-// multi 查询结果为多个
-// UserInfo 为查询返回结果类型, 如果查询结果类型为当前实体类类型一致, 可以省略否则则需要显示书写并且需要导入对应的类
-search selectByNameAndEmail(username: String, email: String): multi UserInfo {
-
-    select * from user_info
-        where
-            // 如果条件成立 则下面一行将会拼接, 如果不成立则不会拼接
-            // 在调用函数时 如果该函数没有任何参数, 则括号可以省略
-            // 通过 ?. 方式调用的函数返回值只能是boolean类型的函数
-            // 与 :: 方式调用的函数不同, :: 方式调用的函数返回结果没有强制, 但是没有条件控制的效果
-            username = :username?.notNull   // 控制当前行, 条件满足之后才会拼接改行sql
-            and email = :email?.hasContains("@")
-            
-            // 以上代码会生成java代码, 可以理解为jdbc动态拼接sql
-            // 每个参数调用的函数为java实现
-            // 可以理解为 Tools.hasContains(email, "@")
-            // 用户也可以实现某些接口的情况下, 自定义自己的函数
-        
+// multi 返回多个数据
+// UserInfo 查询映射类型. 如果该类型和 entity 类型一致, 则可省略
+search selectByName(name: String): multi UserInfo {
+    // sql
 }
 
 
-search selectByUsernameAndPassword(username: String, password: String) : multi {
-    
-    select * from user_info
-        where username = :username
-            and password = :password::encipher   // 对该参数使用 encipher 函数, 将加密后的值参与查询
-
-    // 上述sql等同如下
-    // select * from user_info where username = '用户名' and password = '加密后的密码'
-    
-}
-
-// search multi selectByName(username: String?) {
-//    
-//     select * from user_info
-//         where
-//             username = :username    // 如果仅对参数判空(null), 则只需要在声明的时候加上 ? 即可
-//
-// }
-
-
-// 根据id查询多个 
-// 在声明参数的时候, 如果参数为集合则需要 multi 关键字来声明
+// idList: multi Long
+// multi 对参数使用 标识参数为多个
 search selectByIds(idList: multi Long): multi {
-    
-    select * from user_info
-        // 等价为 id in (?, ?, ?)
-        // 实现方式使用 #in 关键字处理, 而不是使用函数来处理
-        // 关键字为编译期, 函数为执行期, 按理说编译处理的效率会高一些
-        // 如果需要特殊处理则需要自定义函数进行调用
-        where id #in :idList
-
+    // sql
 }
-
-// 模糊查询
-search selectByNameKeyword(nameKeyword: String): multi {
-    
-    select * from user_info
-        // 模糊查询
-        // #like_l  等于 name like '%?' 
-        // #like_r  等于 name like '?%'
-        where name #like :nameKeyword
-    
-}
-
-// -> 箭头语法
-search selectByEmail(email: String): multi {
-    
-    select * from user_info
-        // 对一个变量调用多个函数
-        // 如: :email -> 1 == 1 && "s" == "l" || :status = 1
-        where email = :email -> this::notNull && this::hasContains("@")
-
-        
-        // 语法格式: sql -> boolean expression
-        // sql -> :username != null
-        // 如果 -> 前面存在一个参数, 那么 -> 后面将存在该参数的this指向
-        // :email -> this::notNull && this::hasContains("@") 等于 :email -> :email::notNull && :email::hasContains("@")
-        
-        // 如果 -> 后面只是对 -> 前参数调用一个函数, 则可简化为如下
-        // 简化前: :username -> this::test()
-        // 简化后: :username?.test()
-}
-
-
-// 控制多行条件, 复杂表达式
-// #if 关键字
-search selectByStatus(status: Int): multi {
-    
-    select * from user_info
-        #if status == 1 {
-            where
-                username = 'test'
-                and age = 22
-        }
-   
-}
-
-
-// #when 关键字
-search selectAllSortBy(sortType: Int): multi {
-
-    select * from user_info
-        order by
-        #when :sortType {
-            // 根据年龄倒序
-            0 -> age desc
-            
-            // 根据年龄升序
-            1 -> age
-            
-            // 根据创建记录时间倒叙
-            2 -> created_at desc
-            
-            // 默认
-            else -> created_at
-            
-        }
-    
-}
-
-// 新增 ? 语义
-// 可以在参数后面直接使用
-// 如: where username = :username?
-// 如果username为null则当前行不参与查询, 而不是需要显示调用notNull方法(where username = :username?.notNull)
-
-// 可在 :: 调用的函数后面使用, 调用者为null或者函数返回结果为null, 则当前行不参与查询
-// 如: where username = :username::test?  进行调用test函数后在进行判空
-
-
-search selectInfo(idList: multi Long, username: String, password: String, email: String, phoneNum: String): multi {
-    select * from user_info
-        where
-            id #in :idList?   // 自动展开进行in查询, 如果idList中是对象, 则需要取出对象的某个值进行in查询. 示例: id #in(id) :conditions.objList
-            and username #like :username?    // 如果username等于null, 则本行不参与查询
-            and password = :password::encipher("MD5")?   // 调用 encipher 函数将密码信息MD5进行加密后进行查询, 并且密码为空此行不参与查询
-            and email = :email?.regexMatch("@")  // 使用函数regexMatch进行正则匹配验证, '?.' 调用函数符号为regexMatch函数返回true则本行参与查询. 如: :username?.notBlank
-            and phone_num = :phoneNum -> this != null && ::length == 11
-            // '->' 符号相比 '?.' 区别在于你可以在 "->" 后面写复杂逻辑表达式. 如果需要更复杂的则可以实现自定义函数, 然后使用 '?.' 符号进行函数调用来简化
-            
-// 以上仅是展示用法, 不必关心sql查询逻辑
-}
-
-
 
 

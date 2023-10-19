@@ -1,0 +1,89 @@
+1. 参数访问 (已确定)
+    在sql中使用参数时, 使用 : 冒号访问变量
+    例: 
+        where username = :username
+        where username = :userInfo.username // 访问下级属性
+        
+
+2. 参数函数调用 (已确定)
+    使用参数时想对参数进行处理后在进行使用, 可调用对应函数. 函数可按规则自定义
+    函数使用 :: 双冒号进行调用, 只能对访问的参数使用(不能对函数再调用函数)
+    函数如果没有参数可以省略小括号
+    例:
+        where phone_num = :phoneNum::encrypt    // 对手机号加密后查询
+        where phone_num = :phoneNum::encrypt("SM4") // 有参数的方式
+
+3. 条件控制函数的调用 (已确定)
+    根据条件控制当前行sql语句是否参与查询, 使用 ?. 方式进行调用
+    只能对访问的参数或者调用的函数(:: 调用的函数)使用
+    函数如果没有参数可以省略小括号
+    例:
+        where username = :username?.notNull // 如果参数 username 为 null 则该行sql语句不参与查询
+        where username = :userInfo.username?.notNull
+        where username = :username::test?.notEmpty   // 如果参数 username 为 null 或者 函数返回结果为空, 则该行sql语句不参与查询
+
+
+4. 问号语法. 简化判空操作 (待定)
+    在访问参数时, 经常需要使用 ::notNull 函数进行判空, 对此可以使用 ? 问号语法简化
+    例:
+        where username = :username? // 等于 where username = :username?.notNull
+        where username = :username::test?  // 等于 where username = :username::test?.notNull
+
+5. 箭头语法 (已确定)
+    当控制条件为多个的时候, ?. 方式将无法直接满足, 使用箭头语法可以轻松解决
+    语法:
+        sql -> booleanExpression
+        sql :xxx -> booleanExpression
+        
+    如果 -> 前面为一个被访问的参数, 那么 -> 后面使用该参数的时候可以使用 this 表示
+    -> 后面可以调用函数(通过 :: 双冒号方式)
+    例:
+        where username = :username -> :username != null && :status == 1
+        where username = :username -> this != null && :status == 1
+        // 以上两种方式相等
+        
+        where username = :username -> this::notNull
+        // 对于 -> 后面只是调用一个函数的时候, 可以使用 ?. 简化.  where username = :username?.notNull
+        // 如果只是用来判空(null)的时候可以使用 ? 语法简化. where username = :username?
+        
+        where status = 1 -> :username != null   // -> 前面不存在参数访问, 则无法使用this
+        
+        
+6. #if 语法 (已确定)
+    以上都为控制单行sql, 对于多行sql却无能为力
+    语法:
+        #if booleanExpression {
+            // sql
+        }
+    
+    例:
+        #if :username != null && :username != '' {
+            where username = :username
+        }
+        
+        #if :username::notBlank && :status == 1 {
+            where username = :username
+        }
+    
+
+7. when 语法 (待完善)
+    语法:
+        #when :status {
+            1 -> // sql
+            2 -> {
+                // sql. 单行括号可以省略
+            }
+            else -> // sql
+        }
+    
+        #when {
+            booleanExpression1 -> // sql
+            booleanExpression2 -> // sql
+            else -> // sql
+        }    
+    
+    
+    
+    
+    
+    
