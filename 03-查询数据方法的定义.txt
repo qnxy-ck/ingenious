@@ -1,6 +1,6 @@
-namespace com.demo.mapper
+namespace org.ingenious.demo.mapper
 
-import entity com.demo.data.entity.UserInfo
+import entity org.ingenious.demo.entity.UserInfo
 
 import java.util.List
 
@@ -25,7 +25,7 @@ search selectByNameAndEmail(username: String, email: String): multi UserInfo {
         where
             // 如果条件成立 则下面一行将会拼接, 如果不成立则不会拼接
             // 在调用函数时 如果该函数没有任何参数, 则括号可以省略
-            // 通过 ?. 方式调用的函数返回值只能是boolean类型
+            // 通过 ?. 方式调用的函数返回值只能是boolean类型的函数
             // 与 :: 方式调用的函数不同, :: 方式调用的函数返回结果没有强制, 但是没有条件控制的效果
             username = :username?.notNull   // 控制当前行, 条件满足之后才会拼接改行sql
             and email = :email?.hasContains("@")
@@ -36,6 +36,7 @@ search selectByNameAndEmail(username: String, email: String): multi UserInfo {
             // 用户也可以实现某些接口的情况下, 自定义自己的函数
         
 }
+
 
 search selectByUsernameAndPassword(username: String, password: String) : multi {
     
@@ -90,12 +91,13 @@ search selectByEmail(email: String): multi {
         where email = :email -> this::notNull && this::hasContains("@")
 
         
-        // 语法格式: :参数名称 -> boolean expression
-        // :username -> 在这里将进入 :username 的this指向, 如果在这里对 :username 使用函数, 可以简写为 this::test()/::test(), this == :username
-        // :email -> this::notNull && this::hasContains("@")
+        // 语法格式: sql -> boolean expression
+        // sql -> :username != null
+        // 如果 -> 前面存在一个参数, 那么 -> 后面将存在该参数的this指向
+        // :email -> this::notNull && this::hasContains("@") 等于 :email -> :email::notNull && :email::hasContains("@")
         
         // 如果 -> 后面只是对 -> 前参数调用一个函数, 则可简化为如下
-        // 简化前: :username -> ::test()
+        // 简化前: :username -> this::test()
         // 简化后: :username?.test()
 }
 
@@ -142,7 +144,7 @@ search selectAllSortBy(sortType: Int): multi {
 // 如果username为null则当前行不参与查询, 而不是需要显示调用notNull方法(where username = :username?.notNull)
 
 // 可在 :: 调用的函数后面使用, 调用者为null或者函数返回结果为null, 则当前行不参与查询
-// 如: where username = :username::appand("x")?
+// 如: where username = :username::test?  进行调用test函数后在进行判空
 
 
 search selectInfo(idList: multi Long, username: String, password: String, email: String, phoneNum: String): multi {

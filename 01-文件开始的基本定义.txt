@@ -11,5 +11,4 @@ import entity com.demo.data.entity.UserInfo
 import java.util.List
 
 
->>> 02-添加数据方法的定义
 
