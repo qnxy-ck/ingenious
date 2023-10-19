@@ -94,3 +94,18 @@ search selectByUsername(username: String): UserInfo {
         group by username
 }
     
+
+// 对字段调用函数返回处理后的值
+search selectByUsername(username: String): multi {
+
+    select
+        id,
+        username,
+        phone_num,       => this::phoneNumFormat()   // 199****9999
+        age,
+        birthday,
+        created_at
+    from user_info
+    where username = :username?
+    
+}
