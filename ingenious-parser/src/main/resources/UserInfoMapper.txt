@@ -1,19 +1,31 @@
 namespace org.ingenious.mapper
 
-import entity org.ingenious.mapper.UserInfo
+entity org.ingenious.mapper.UserInfo
+
+import java.util.List
+import java.util.*
 
 
-search selectById(id: Int) {
+search selectById(id: Int, status: Status) {
     
     select * from user_info
-         0 :id?
-         1 :id::test()
-         2 :id::test(1)
-         3 :id::test(true)?
-         6 :id::test(false)?.test2
-         8 :id::test(:id, false)
-         xx :id -> :ss::test(1) == :x.y.z.s::test
-         ss :id -> :ss::test(1) == this::p(false)
-         x :id?.test(null)
-         7 :id::test("a", "b")?.test2
+
+    // where username = :username?
+    // where username = :username?.notNull
+    // where username = :username -> :username::notNull
+    // where username = :username -> this::notNull
+    // where username = 'test' -> :username:notNull
+    // 
+    // #if :username != null {
+    //     where username = :username
+    // }
+    // 
+    // #if :username::notNull {
+    //     where username = :username
+    // }
+    
+    
+    
+   
+     
 }

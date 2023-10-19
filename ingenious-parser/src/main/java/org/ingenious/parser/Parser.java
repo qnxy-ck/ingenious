@@ -1,12 +1,15 @@
 package org.ingenious.parser;
 
+import org.ingenious.Pair;
 import org.ingenious.ast.*;
 import org.ingenious.lexer.Lexer;
 import org.ingenious.token.*;
 import org.ingenious.token.keyword.*;
 import org.ingenious.token.symbol.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -14,14 +17,10 @@ import java.util.stream.Collectors;
  *
  * @author Qnxy
  */
-public final class Parser {
-
-    private final Lexer lexer;
-    private final Queue<Token<?>> tokens = new ArrayDeque<>();
+public final class Parser extends CommonParser {
 
     public Parser(Lexer lexer) {
-        this.lexer = lexer;
-        this.tokens.offer(this.lexer.getNextToken());
+        super(lexer);
     }
 
     public Program parse() {
@@ -45,16 +44,17 @@ public final class Parser {
         var list = new ArrayList<ASTree>();
 
         list.add(this.namespaceStatement());
-        list.add(this.importEntityStatement());
+        list.add(this.entityStatement());
 
         // OptImportStatementList
         if (this.test(ImportToken.class)) {
-            list.addAll(this.importStatementList());
+            list.add(this.importStatementList());
+        } else {
+            // 没有 import 则使用空的, 进行占位方便后面代码生成判断是否为类的开始
+            list.add(ImportStatementList.EMPTY_IMPORT_STATEMENT_LIST);
         }
 
         list.addAll(this.funStatementList());
-
-
         return list;
     }
 
@@ -183,7 +183,7 @@ public final class Parser {
             this.consume(MultiToken.class);
         }
 
-        final var typeValue = this._typeValue();
+        final var typeValue = this.namespacePath();
         this.ignoreNewLines();
         return new FunTypeDeclaration(multiple, typeValue);
     }
@@ -206,7 +206,7 @@ public final class Parser {
             return FunTypeDeclaration.MUL_DEFAULT;
         }
 
-        final var typeValue = this._typeValue();
+        final var typeValue = this.namespacePath();
         return new FunTypeDeclaration(multiple, typeValue);
     }
 
@@ -567,6 +567,26 @@ public final class Parser {
     }
 
     /*
+        PrimaryExpression
+            : MemberExpression
+            | Literal
+            ;
+     */
+    private ASTree primaryExpression() {
+        // MemberExpression
+        if (this.test(ColonToken.class)) {
+            return this.memberExpression();
+        }
+
+        // Literal
+        if (this.test(LiteralToken.class)) {
+            return this.literal();
+        }
+
+        throw new SyntaxException("(primaryExpression) 未支持的类型: " + this.lookahead(), this.lookahead());
+    }
+
+    /*
         MemberExpression
             : ':' Members
             ;
@@ -600,39 +620,12 @@ public final class Parser {
     }
 
     /*
-        NamespaceStatement
-            : 'namespace' NamespaceDefinition NewLines
-            ;
-     */
-    private NamespaceStatement namespaceStatement() {
-        this.consume(NamespaceToken.class);
-
-        final String namespace = this._namespaceDefinition(false);
-        this.ignoreNewLines(true);
-        return new NamespaceStatement(namespace);
-    }
-
-    /*
-        ImportEntityStatement
-            : 'import' 'entity' NamespaceDefinition NewLines
-            ;
-     */
-    private ImportStatement importEntityStatement() {
-        this.consume(ImportToken.class);
-        this.consume(EntityToken.class);
-
-        final String entityValue = this._namespaceDefinition(false);
-        this.ignoreNewLines(true);
-        return new ImportStatement(entityValue, true);
-    }
-
-    /*
         ImportStatementList
             : ImportStatement
             | ImportStatementList ImportStatement
             ;
      */
-    private List<ImportStatement> importStatementList() {
+    private ImportStatementList importStatementList() {
         final var list = new ArrayList<ImportStatement>();
 
         list.add(this.importStatement());
@@ -641,45 +634,98 @@ public final class Parser {
             list.add(this.importStatement());
         }
 
-        return list;
+        return new ImportStatementList(list);
     }
 
     /*
       ImportStatement
-          : 'import' NamespaceDefinition NewLines
+          : 'import' ImportPath NewLines
           ;
    */
     private ImportStatement importStatement() {
         this.consume(ImportToken.class);
-
-        final String entityValue = this._namespaceDefinition(true);
+        Pair<Identifier[], Boolean> importedPath = this.importPath();
         this.ignoreNewLines(true);
-        return new ImportStatement(entityValue, false);
+
+        return new ImportStatement(importedPath.first(), importedPath.second());
+    }
+
+    /*
+        ImportPath
+            : Identifier
+            | ImportPath '.' Identifier
+            | ImportPath '.' '*'
+            ;
+     */
+    private Pair<Identifier[], Boolean> importPath() {
+        final var list = new ArrayList<Identifier>();
+        list.add(this.identifier());
+
+        boolean endAsterisk = false;
+        while (this.test(DotToken.class)) {
+            this.consume(DotToken.class);
+
+            if (this.test(MultiplicativeToken.MULTIPLICATION.getClass())) {
+                endAsterisk = true;
+                this.consume(MultiplicativeToken.MULTIPLICATION.getClass());
+                // 如果当前符号为星号, 则解析结束
+                break;
+            } else {
+                list.add(this.identifier());
+            }
+        }
+
+        return new Pair<>(list.toArray(new Identifier[]{}), endAsterisk);
+    }
+
+    /*
+        EntityStatement
+            : entity NamespacePath NewLines
+            ;
+     */
+    private EntityStatement entityStatement() {
+        this.consume(EntityToken.class);
+
+        final var identifiers = this.namespacePath();
+        this.ignoreNewLines(true);
+        return new EntityStatement(identifiers);
+    }
+
+    /*
+      NamespaceStatement
+          : 'namespace' NamespacePath NewLines
+          ;
+   */
+    private NamespaceStatement namespaceStatement() {
+        this.consume(NamespaceToken.class);
+
+        final var identifiers = this.namespacePath();
+        this.ignoreNewLines(true);
+        return new NamespaceStatement(identifiers);
+    }
+
+    /*
+        NamespacePath
+     */
+    private List<Identifier> namespacePath() {
+        final var list = new ArrayList<Identifier>();
+        list.add(this.identifier());
+        while (this.test(DotToken.class)) {
+            this.consume(DotToken.class);
+
+            if (this.test(MultiplicativeToken.MULTIPLICATION.getClass())) {
+                throw new SyntaxException("Asterisks are not allowed in namespaces.", this.lookahead());
+            }
+
+            list.add(this.identifier());
+        }
+
+        return list;
     }
 
     private Identifier identifier() {
         final var identifierToken = this.consume(IdentifierToken.class);
         return new Identifier(identifierToken.value());
-    }
-
-    /*
-        PrimaryExpression
-            : MemberExpression
-            | Literal
-            ;
-     */
-    private ASTree primaryExpression() {
-        // MemberExpression
-        if (this.test(ColonToken.class)) {
-            return this.memberExpression();
-        }
-
-        // Literal
-        if (this.test(LiteralToken.class)) {
-            return this.literal();
-        }
-
-        throw new SyntaxException("(primaryExpression) 未支持的类型: " + this.lookahead(), this.lookahead());
     }
 
     /*
@@ -753,32 +799,6 @@ public final class Parser {
         return new NumericLiteral(token.value());
     }
 
-    /*
-        TypeValue
-     */
-    private String _typeValue() {
-        return this._namespaceDefinition(false);
-    }
-
-    private String _namespaceDefinition(boolean asterisk) {
-        var sb = new StringBuilder();
-
-        sb.append(this.consume(IdentifierToken.class).value());
-
-        while (this.test(DotToken.class)) {
-            sb.append(this.consume(DotToken.class).value());
-
-            if (asterisk && this.test(MultiplicativeToken.MULTIPLICATION.getClass())) {
-                sb.append(this.consume(MultiplicativeToken.MULTIPLICATION.getClass()).value());
-                break;
-            }
-
-            sb.append(this.consume(IdentifierToken.class).value());
-        }
-
-        return sb.toString();
-    }
-
     /**
      * 消耗所有换行, 直到不是换行为止
      * 不强制消耗, 存在则消耗
@@ -801,96 +821,5 @@ public final class Parser {
             this.consume(NewLineToken.class);
         }
     }
-
-    // --------------------------------------------------------
-    // 辅助方法
-
-    private Token<?> lookahead() {
-        return this.tokens.peek();
-    }
-
-    /**
-     * 匹配lookahead
-     *
-     * @param tokenType 待匹配的token类型
-     * @return true 匹配成功
-     */
-    private <T extends Token<?>> boolean test(Class<T> tokenType) {
-        return tokenType.isInstance(this.lookahead());
-    }
-
-    /**
-     * 匹配token直到找到为止, 如果匹配过程中遇到了stopTokenType, 则会提前结束 返回false未找到
-     *
-     * @param tokenType     待匹配的token类型
-     * @param stopTokenType 停止匹配的token类型
-     * @return true 匹配成功
-     */
-    private boolean tokenMatching(Class<? extends Token<?>> tokenType, Class<? extends Token<?>> stopTokenType) {
-        // 优先匹配队列中的token
-        for (Token<?> t : this.tokens) {
-            if (tokenType.isInstance(t)) {
-                return true;
-            }
-
-            if (stopTokenType.isInstance(t)) {
-                return false;
-            }
-        }
-
-        var token = this.lookahead();
-
-        while (true) {
-            if (tokenType.isInstance(token)) {
-                return true;
-            }
-
-            // 如果没有找到则继续向下获取
-            // 获取到的token添加到队列中
-            token = this.lexer.getNextToken();
-            if (token == null) {
-                return false;
-            }
-
-            this.tokens.offer(token);
-            if (stopTokenType.isInstance(token)) {
-                return false;
-            }
-        }
-    }
-
-    /**
-     * 消费一个token并更新lookahead
-     *
-     * @param tokenType 消费token的类型
-     * @param <V>       token的类型
-     * @return 被消费的token信息
-     */
-    private <V extends Token<?>> V consume(Class<V> tokenType) {
-        final var token = this.tokens.poll();
-
-        if (token == null) {
-            throw new SyntaxException("Unexpected end of input, expected: " + tokenType.getSimpleName(), null);
-        }
-
-        if (!tokenType.isInstance(token)) {
-            final var exStr = String.format(
-                    "Unexpected token: %s, expected: %s",
-                    token,
-                    tokenType.getSimpleName()
-            );
-            throw new SyntaxException(exStr, token);
-        }
-
-        // 继续获取下一个
-        final var nextToken = this.lexer.getNextToken();
-        if (nextToken != null) {
-            this.tokens.offer(nextToken);
-        }
-
-        //noinspection unchecked
-        return (V) token;
-    }
-
 
 }

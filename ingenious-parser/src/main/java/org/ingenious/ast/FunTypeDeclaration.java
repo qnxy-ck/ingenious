@@ -1,5 +1,7 @@
 package org.ingenious.ast;
 
+import java.util.List;
+
 /**
  * 数据类型定义
  *
@@ -10,7 +12,7 @@ public record FunTypeDeclaration(
         boolean multiple,
 
         // 具体类型
-        String typeValue
+        List<Identifier> values
 ) implements ASTree {
 
     public static final FunTypeDeclaration DEFAULT = new FunTypeDeclaration(false, null);
