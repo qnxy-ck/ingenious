@@ -10,11 +10,17 @@ search selectById(id: Int, status: Status) {
     
     select * from user_info
 
-    // where username = :username?
-    // where username = :username?.notNull
-    // where username = :username -> :username::notNull
-    // where username = :username -> this::notNull
-    // where username = 'test' -> :username:notNull
+        where username = :username
+        where username = :username?
+        where username = :username.a::test?
+        where username = :username?.notNull
+        where username = '0' -> :username.x::notNull
+        where username = '0' -> :username.a::notNull(true, null, "as")
+        where username = :username -> this::notNull
+        where username = :username -> this == 2
+     
+        where username = 'test' -> :username::notNull
+        
     // 
     // #if :username != null {
     //     where username = :username

@@ -19,6 +19,8 @@ import java.util.stream.Collectors;
  */
 public final class Parser extends CommonParser {
 
+    private boolean thisAvailable = false;
+
     public Parser(Lexer lexer) {
         super(lexer);
     }
@@ -268,7 +270,7 @@ public final class Parser extends CommonParser {
 
         // FunCallExpression
         if (this.test(ColonToken.class)) {
-            return this.funCallExpression();
+            return this.memberCallExpression();
         }
 
         // ZipSqlLiteral
@@ -277,7 +279,8 @@ public final class Parser extends CommonParser {
 
     /*
         ArrowIfStatement
-            : ZipSqlLiteral MemberExpression '->' ConditionalExpression NewLines
+            : ZipSqlLiteral '->' NoThisConditionalExpression NewLines
+            | ZipSqlLiteral MemberExpression '->' ConditionalExpression NewLines
             ;
     */
     private ArrowIfStatement arrowIfStatement() {
@@ -290,17 +293,14 @@ public final class Parser extends CommonParser {
             throw new SyntaxException(exStr, this.lookahead());
         }
 
-        if (!this.test(ColonToken.class)) {
-            final var exStr = String.format(
-                    "Unsupported syntax. The parameter information that was called does not exist. Correct way: [sql :username -> conditionalExpression] -> Row: [%s]",
-                    this.lookahead().tokenLocation().lineNumer()
-            );
-            throw new SyntaxException(exStr, this.lookahead());
+        MemberExpression memberExpression = null;
+        if (this.test(ColonToken.class)) {
+            this.thisAvailable = true;
+            memberExpression = this.memberExpression();
+        } else {
+            this.thisAvailable = false;
         }
-
-        // MemberExpression
-        final var memberExpression = this.memberExpression();
-
+        
         // ->
         this.consume(ArrowToken.class);
 
@@ -345,41 +345,44 @@ public final class Parser extends CommonParser {
 
     /*
         LeftHandSideExpression
-            : PrimaryExpression
-            | FunCallExpression
-            | ThisFunCallExpression
+            : MemberCallExpression
+            | ThisCallExpression
+            | PrimaryExpression
             ;
      */
     private ASTree leftHandSideExpression() {
         if (this.test(ColonToken.class)) {
-            return this.funCallExpression();
+            return this.memberCallExpression();
         }
 
+        // 在 this 被启用时使用
         if (this.test(ThisToken.class)) {
-            return this.thisFunCallExpression();
+            if (this.thisAvailable) {
+                return this.thisCallExpression();
+            } else {
+                throw new SyntaxException("The this keyword cannot be used in the current context.", this.lookahead());
+            }
         }
 
         return this.primaryExpression();
     }
 
     /*
-        thisFunCallExpression
+        ThisCallExpression
             : ThisExpression
-            | 'this' '::' Identifier OptArguments
+            | 'this' '::' CallExpression
             ;
      */
-    private ASTree thisFunCallExpression() {
-        this.consume(ThisToken.class);
+    private ASTree thisCallExpression() {
+        final ThisExpression caller = this.thisExpression();
 
         if (this.test(DoubleColonToken.class)) {
             this.consume(DoubleColonToken.class);
 
-            final var funName = this.consume(IdentifierToken.class).value();
-            final var arguments = this.optArguments();
-            return new ThisFunCallExpression(funName, arguments);
+            return this.callExpression(caller);
         }
 
-        return this.thisExpression();
+        return caller;
     }
 
     /*
@@ -388,17 +391,22 @@ public final class Parser extends CommonParser {
             ;
      */
     private ThisExpression thisExpression() {
-        return new ThisExpression();
+        this.consume(ThisToken.class);
+        return ThisExpression.INSTANCE;
     }
 
     /*
+        sql :xxx?.test
+        sql :xxx?
+        
         SimpleIfStatement
-            | ZipSqlLiteral CallExpression
+            : ZipSqlLiteral logicalCallExpression
+            | ZipSqlLiteral NotNullCallExpression
             ;
      */
     private ASTree simpleIfStatement() {
-        final var zipSqlLiteral = this.zipSqlLiteral();
-        if (zipSqlLiteral.value().isBlank()) {
+        final var consequent = this.zipSqlLiteral();
+        if (consequent.value().isBlank()) {
             final var exStr = String.format(
                     "Unsupported syntax. Illegal dangling control statement -> Row: [%s]",
                     this.lookahead().tokenLocation().lineNumer()
@@ -406,9 +414,12 @@ public final class Parser extends CommonParser {
             throw new SyntaxException(exStr, this.lookahead());
         }
 
-        final var callExpression = this.callExpression();
+        // 被调用函数
+        final var test = this.tokenMatching(QuestionMarkPointToken.class, NewLineToken.class)
+                ? this.logicalCallExpression()
+                : this.notNullCallExpression();
 
-        return new SimpleIfStatement(callExpression, zipSqlLiteral);
+        return new SimpleIfStatement(consequent, test);
     }
 
     /*
@@ -425,7 +436,7 @@ public final class Parser extends CommonParser {
     private SqlLiteral zipSqlLiteral() {
         final var list = new ArrayList<Token<?>>();
 
-        while (!(this.test(ColonToken.class) || this.test(NewLineToken.class))) {
+        while (!(this.test(ColonToken.class) || this.test(NewLineToken.class) || this.test(ArrowToken.class))) {
             list.add(this.consume(Token.class));
         }
 
@@ -439,82 +450,67 @@ public final class Parser extends CommonParser {
     }
 
     /*
-        CallExpression
-            : SimpleLogicalFunCallExpression
-            | LogicalFunCallExpression
+        NotNullCallExpression
+            : MemberCallExpression '?' NewLines
             ;
      */
-    private ASTree callExpression() {
-        if (this.tokenMatching(QuestionMarkToken.class, NewLineToken.class)) {
-            return this.simpleLogicalFunCallExpression();
-        }
-
-        return this.logicalFunCallExpression();
-    }
-
-    /*
-        SimpleLogicalFunCallExpression
-            : FunCallExpression '?' NewLines
-            ;
-     */
-    private ASTree simpleLogicalFunCallExpression() {
-        final var funCallExpression = this.funCallExpression();
-
-        if (!this.test(QuestionMarkToken.class)) {
-            final var exStr = String.format(
-                    "Unsupported syntax. Maybe there's a question mark at the end -> Row: [%s]",
-                    this.lookahead().tokenLocation().lineNumer());
-            throw new SyntaxException(exStr, this.lookahead());
-        }
+    private ASTree notNullCallExpression() {
+        final var funCallExpression = this.memberCallExpression();
 
         this.consume(QuestionMarkToken.class);
         this.ignoreNewLines(true);
 
-        return funCallExpression;
+        return new NotNullCallExpression(funCallExpression);
     }
 
     /*
-        LogicalFunCallExpression
-            : FunCallExpression
-            | FunCallExpression '?.' Identifier OptArguments NewLines
+        LogicalCallExpression
+            : MemberCallExpression
+            | MemberCallExpression '?.' CallExpression NewLines
             ;
      */
-    private ASTree logicalFunCallExpression() {
-        final var funCallExpression = this.funCallExpression();
+    private ASTree logicalCallExpression() {
+        final var callee = this.memberCallExpression();
 
         if (this.test(QuestionMarkPointToken.class)) {
             this.consume(QuestionMarkPointToken.class);
-            final var funName = this.consume(IdentifierToken.class).value();
-            final var arguments = this.optArguments();
 
+            final var callFunc = this.callExpression(callee);
             this.ignoreNewLines(true);
 
-            return new LogicalFunCallExpression(funCallExpression, funName, arguments);
+            return new LogicalCallExpression(callee, callFunc);
         }
 
-        return funCallExpression;
-
+        return callee;
     }
 
     /*
-        FunCallExpression
+        MemberCallExpression
             : MemberExpression
-            | MemberExpression '::' Identifier OptArguments
+            | MemberExpression '::' CallExpression
             ;
      */
-    private ASTree funCallExpression() {
+    private ASTree memberCallExpression() {
         final var memberExpression = this.memberExpression();
 
         if (this.test(DoubleColonToken.class)) {
             this.consume(DoubleColonToken.class);
 
-            final var funName = this.consume(IdentifierToken.class).value();
-            final var arguments = this.optArguments();
-
-            return new FunCallExpression(memberExpression, funName, arguments);
+            return this.callExpression(memberExpression);
         }
 
         return memberExpression;
+    }
+
+    /*
+        CallExpression
+            : Identifier OptArguments
+            ;
+     */
+    private CallExpression callExpression(ASTree caller) {
+        final var funName = this.identifier().value();
+        final var arguments = this.optArguments();
+        return new CallExpression(caller, funName, arguments);
     }
 
     /*
@@ -588,26 +584,18 @@ public final class Parser extends CommonParser {
 
     /*
         MemberExpression
-            : ':' Members
+            : ':' Identifier
+            | MemberExpression '.' Identifier
             ;
      */
     private MemberExpression memberExpression() {
         this.consume(ColonToken.class);
-        return this.members();
-    }
-
-    /*
-        MemberExpression
-            : Identifier
-            | MemberExpression '.' Identifier
-            ;
-     */
-    private MemberExpression members() {
         ASTree member = this.identifier();
 
         ASTree property = null;
         while (this.test(DotToken.class)) {
             this.consume(DotToken.class);
+
             property = this.identifier();
             member = new MemberExpression(member, property);
         }

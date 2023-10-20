@@ -12,7 +12,7 @@ public class SyntaxException extends RuntimeException {
     private final Token<?> stopToken;
 
     public SyntaxException(String message, Token<?> stopToken) {
-        super(message + " -> " + stopToken);
+        super(message + " \nAn error occurred -> " + stopToken);
         this.stopToken = stopToken;
     }
 

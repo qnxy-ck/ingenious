@@ -6,4 +6,7 @@ package org.ingenious.ast;
  * @author Qnxy
  */
 public record ThisExpression() implements ASTree {
+
+    public static final ThisExpression INSTANCE = new ThisExpression();
+    
 }
