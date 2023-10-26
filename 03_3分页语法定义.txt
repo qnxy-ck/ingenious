@@ -13,7 +13,7 @@ search selectByUsername(username: String): page {
     select
         id,
         username,
-        birthday,
+        birthday
         
         // 分页语法
         // #page 分页参数(隐式存在) 统计函数参数
