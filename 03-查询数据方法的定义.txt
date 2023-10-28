@@ -27,3 +27,16 @@ search selectByIds(idList: multi Long): multi {
 }
 
 
+// 新增单参数查询声明简化方式
+// 单参数必须是实体类中存在的字段
+
+// 对应声明为: search selectById(id: Long)
+search #select_by :id
+
+// 对应声明为: search selectByUsername(username: String): multi
+search multi #select_by :username
+
+
+// 对应声明: search selectPageByUsername(username: String, pageInfo: PageInfo): page
+search page #select_by :username
+
