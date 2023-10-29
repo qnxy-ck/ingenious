@@ -24,7 +24,7 @@ XML的动态sql方式确实比较臃肿, 当然可以写在其他文件格式中
 
 namespace com.demo.mapper
 
-import entity com.demo.data.entity.UserInfo
+entity com.demo.data.entity.UserInfo
 
 search selectInfo(idList: multi Long, username: String, password: String, email: String, phoneNum: String): multi {
     select * from user_info
