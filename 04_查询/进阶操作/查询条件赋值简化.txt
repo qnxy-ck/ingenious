@@ -1,0 +1,14 @@
+where username = :username
+where =:username
+
+where username != :username
+where !=:username
+
+where age = :age
+where =:age
+ 
+where age > :age
+where >:age
+
+where age >= :age
+where >=:age

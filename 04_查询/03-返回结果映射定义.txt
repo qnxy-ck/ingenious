@@ -1,0 +1,19 @@
+namespace com.demo.mapper
+
+entity com.demo.data.entity.UserInfo
+
+
+// 对字段调用函数返回处理后的值
+search selectByUsername(username: String): multi {
+
+    select
+        id,
+        username,
+        phone_num,  => phoneNumFormat()   // 将该字段查询结果格式化为 199****9999
+        age,
+        birthday,
+        created_at
+    from user_info
+    where username = :username?
+    
+}

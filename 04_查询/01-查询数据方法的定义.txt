@@ -1,0 +1,30 @@
+namespace org.ingenious.demo.mapper
+
+entity org.ingenious.demo.entity.UserInfo
+
+
+// search 为查询方法定义关键字
+// selectById 该方法的名称
+// id: Long 为查询参数
+// UserInfo 查询映射类型. 如果该类型和 entity 类型一致, 则可省略
+search selectById(id: Long): UserInfo {
+    select * from user_info
+        where id = :id
+}
+
+
+// multi 返回多个数据
+// UserInfo 查询映射类型. 如果该类型和 entity 类型一致, 则可省略
+search selectByName(name: String): multi UserInfo {
+    // sql
+}
+
+
+// idList: multi Long
+// multi 对参数使用 标识参数为多个
+search selectByIds(idList: multi Long): multi {
+    // sql
+}
+
+
+

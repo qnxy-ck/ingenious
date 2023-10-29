@@ -1,0 +1,26 @@
+namespace com.demo.mapper
+
+entity com.demo.data.entity.UserInfo
+
+// delete 删除方法定义关键字
+// 默认返回更新影响行数 (Long)
+// 如果需要返回布尔值, 则需手动指定
+// 如: delete deleteById(id: Long): Boolean { }
+delete deleteById(id: Long) {
+
+    // 原始写法
+    delete from user_info where id = :id
+    
+    // 进阶写法
+    #delete_where {
+         id = :id
+    }
+    
+}
+
+// 简写
+delete deleteById(id: Long): Boolean = #delete_where {
+    id = :id
+}
+
+
